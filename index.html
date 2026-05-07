@@ -566,31 +566,42 @@ async function fetchRoot() {
 }
 
 async function fetchFolderContents(folderId, parentName) {
-  // First get sub-folders
-  const folderQ = encodeURIComponent(`'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const folderUrl = `https://www.googleapis.com/drive/v3/files?q=${folderQ}&fields=files(id,name)&key=${CONFIG.apiKey}`;
-  const folderRes = await fetch(folderUrl);
-  const folderData = await folderRes.json();
-  if (folderData.error) throw new Error(folderData.error.message);
+  try {
+    // First get sub-folders
+    const folderQ = encodeURIComponent(`'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+    const folderUrl = `https://www.googleapis.com/drive/v3/files?q=${folderQ}&fields=files(id,name)&key=${CONFIG.apiKey}`;
+    const folderRes = await fetch(folderUrl);
+    const folderData = await folderRes.json();
+    if (folderData.error) throw new Error(folderData.error.message);
 
-  const subFolders = folderData.files || [];
+    const subFolders = folderData.files || [];
 
-  // Get videos in this folder
-  const mimeQ = VIDEO_MIME.map(m=>`mimeType='${m}'`).join(' or ');
-  const q = encodeURIComponent(`'${folderId}' in parents and (${mimeQ}) and trashed=false`);
-  const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,mimeType,modifiedTime,thumbnailLink)&pageSize=100&key=${CONFIG.apiKey}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
+    // Get videos in this folder
+    const mimeQ = VIDEO_MIME.map(m=>`mimeType='${m}'`).join(' or ');
+    const q = encodeURIComponent(`'${folderId}' in parents and (${mimeQ}) and trashed=false`);
+    const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,mimeType,modifiedTime,thumbnailLink)&pageSize=100&key=${CONFIG.apiKey}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
 
-  const folderName = parentName || CONFIG.libraryName;
-  const files = (data.files || []).map(f => ({...f, folder: folderName}));
-  ALL_FILES.push(...files);
-  if (!FOLDERS.includes(folderName) && files.length > 0) FOLDERS.push(folderName);
+    const folderName = parentName || CONFIG.libraryName || 'My Videos';
+    const files = (data.files || []).map(f => ({
+      id: f.id || '',
+      name: f.name || 'Untitled',
+      mimeType: f.mimeType || 'video/mp4',
+      modifiedTime: f.modifiedTime || null,
+      thumbnailLink: f.thumbnailLink || null,
+      folder: folderName
+    }));
+    ALL_FILES.push(...files);
+    if (!FOLDERS.includes(folderName) && files.length > 0) FOLDERS.push(folderName);
 
-  // Recurse into sub-folders (up to depth 2)
-  for (const sf of subFolders.slice(0, 8)) {
-    await fetchFolderContents(sf.id, sf.name);
+    // Recurse into sub-folders (up to depth 2)
+    for (const sf of subFolders.slice(0, 8)) {
+      await fetchFolderContents(sf.id, sf.name);
+    }
+  } catch(e) {
+    console.warn('Error fetching folder:', parentName, e.message);
   }
 }
 
@@ -704,8 +715,10 @@ function cardHTML(f) {
    HERO
 ═══════════════════════════════════════════════════ */
 function renderHero(files) {
-  const heroFiles = files.filter(f => f.thumbnailLink).slice(0, 5);
-  if (!heroFiles.length) heroFiles.push(...files.slice(0,5));
+  if (!files || !files.length) return;
+  const heroFiles = files.filter(f => f && f.thumbnailLink).slice(0, 5);
+  if (!heroFiles.length) heroFiles.push(...files.filter(f => f).slice(0,5));
+  if (!heroFiles.length) return;
 
   clearInterval(heroTimer);
   heroIdx = 0;
