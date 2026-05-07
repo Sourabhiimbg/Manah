@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DriveFlix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E50914;
+    --red-dark: #B0060F;
+    --bg: #141414;
+    --surface: #1f1f1f;
+    --surface2: #2a2a2a;
+    --text: #ffffff;
+    --text-muted: #a0a0a0;
+    --card-w: 220px;
+    --card-h: 124px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; gap: 2rem;
+    padding: 0 4vw;
+    height: 64px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+    transition: background 0.3s;
+  }
+  nav.scrolled { background: rgba(20,20,20,0.97); backdrop-filter: blur(8px); }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--red);
+    letter-spacing: 2px;
+    user-select: none;
+    cursor: pointer;
+  }
+
+  .nav-links { display: flex; gap: 1.5rem; }
+  .nav-links a {
+    font-size: 0.85rem; font-weight: 500; color: var(--text-muted);
+    text-decoration: none; transition: color 0.2s; cursor: pointer;
+  }
+  .nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
+
+  .btn-config {
+    background: var(--red); color: #fff;
+    border: none; border-radius: 4px;
+    padding: 7px 16px; font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.2s;
+  }
+  .btn-config:hover { background: var(--red-dark); }
+
+  /* ─── HERO ─── */
+  #hero {
+    position: relative; height: 80vh; min-height: 480px;
+    display: flex; align-items: flex-end;
+    padding: 4rem 4vw 5rem;
+    overflow: hidden;
+  }
+  #hero-bg {
+    position: absolute; inset: 0;
+    background: var(--surface);
+    background-size: cover; background-position: center;
+    transition: background-image 0.6s ease;
+  }
+  #hero-bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, var(--bg) 0%, rgba(20,20,20,0.4) 60%, rgba(20,20,20,0.1) 100%),
+                linear-gradient(to right, rgba(20,20,20,0.8) 0%, transparent 60%);
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 520px; }
+  #hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    margin-bottom: 0.75rem;
+  }
+  #hero-meta { font-size: 0.85rem; color: #a0a0a0; margin-bottom: 1rem; }
+  .hero-btns { display: flex; gap: 0.75rem; }
+  .btn-play {
+    background: #fff; color: #000;
+    border: none; border-radius: 4px;
+    padding: 10px 24px; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.2s;
+  }
+  .btn-play:hover { background: rgba(255,255,255,0.85); }
+  .btn-info {
+    background: rgba(109,109,110,0.7); color: #fff;
+    border: none; border-radius: 4px;
+    padding: 10px 20px; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.2s;
+  }
+  .btn-info:hover { background: rgba(109,109,110,0.5); }
+
+  /* ─── ROWS ─── */
+  #content { padding: 0 4vw 4rem; margin-top: -4rem; position: relative; z-index: 2; }
+
+  .row { margin-bottom: 2.5rem; }
+  .row-title {
+    font-size: 1.1rem; font-weight: 600;
+    margin-bottom: 0.75rem; color: #e5e5e5;
+  }
+  .row-track {
+    display: flex; gap: 6px;
+    overflow-x: auto; padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .row-track::-webkit-scrollbar { display: none; }
+
+  /* ─── CARD ─── */
+  .card {
+    flex: 0 0 var(--card-w);
+    height: var(--card-h);
+    border-radius: 4px; overflow: hidden;
+    position: relative; cursor: pointer;
+    background: var(--surface);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s;
+  }
+  .card:hover {
+    transform: scale(1.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+    z-index: 10;
+  }
+  .card-thumb {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .card-thumb-fallback {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    padding: 12px; text-align: center;
+  }
+  .card-thumb-fallback .icon {
+    font-size: 2rem; margin-bottom: 6px;
+  }
+  .card-thumb-fallback .fname {
+    font-size: 0.7rem; color: #ccc;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .card-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 8px 10px; opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card:hover .card-overlay { opacity: 1; }
+  .card-name {
+    font-size: 0.72rem; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .card-duration { font-size: 0.62rem; color: #a0a0a0; }
+
+  /* ─── MODAL PLAYER ─── */
+  #modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s;
+  }
+  #modal-overlay.open { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  #modal {
+    background: #181818;
+    border-radius: 8px; overflow: hidden;
+    width: min(92vw, 900px);
+    max-height: 92vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideUp 0.25s cubic-bezier(.4,0,.2,1);
+    scrollbar-width: none;
+  }
+  #modal::-webkit-scrollbar { display: none; }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  #modal-close {
+    position: absolute; top: 12px; right: 12px; z-index: 10;
+    background: rgba(0,0,0,0.7); border: none; color: #fff;
+    border-radius: 50%; width: 36px; height: 36px;
+    font-size: 1.2rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  #modal-close:hover { background: rgba(0,0,0,0.95); }
+
+  #video-wrap {
+    width: 100%; background: #000;
+    aspect-ratio: 16/9; position: relative;
+  }
+  #video-wrap iframe {
+    width: 100%; height: 100%; border: none;
+  }
+
+  #modal-info { padding: 1.5rem; }
+  #modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem; letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+  }
+  #modal-meta { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+  #modal-open {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent; border: 1px solid #555; color: #ccc;
+    border-radius: 4px; padding: 6px 14px; font-size: 0.8rem;
+    cursor: pointer; font-family: inherit; transition: border-color 0.2s;
+    text-decoration: none;
+  }
+  #modal-open:hover { border-color: #fff; color: #fff; }
+
+  /* ─── SETUP PANEL ─── */
+  #setup-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.92);
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+  #setup-box {
+    background: #1f1f1f; border-radius: 8px;
+    padding: 2rem; width: min(92vw, 520px);
+    border: 1px solid #333;
+  }
+  .setup-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem; color: var(--red);
+    letter-spacing: 2px; margin-bottom: 0.5rem;
+  }
+  .setup-box h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; }
+  .setup-box p { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5; }
+
+  .field-label {
+    font-size: 0.78rem; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 6px; display: block;
+  }
+  .field-input {
+    width: 100%; background: #2a2a2a; border: 1px solid #444;
+    border-radius: 4px; padding: 10px 12px;
+    color: #fff; font-size: 0.88rem; font-family: inherit;
+    margin-bottom: 1rem; outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus { border-color: var(--red); }
+  .field-input::placeholder { color: #555; }
+
+  .setup-actions { display: flex; gap: 0.75rem; margin-top: 0.5rem; }
+  .btn-primary {
+    flex: 1; background: var(--red); color: #fff;
+    border: none; border-radius: 4px;
+    padding: 11px; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--red-dark); }
+  .btn-secondary {
+    background: transparent; border: 1px solid #555; color: #ccc;
+    border-radius: 4px; padding: 11px 20px;
+    font-size: 0.88rem; cursor: pointer; font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .btn-secondary:hover { border-color: #aaa; }
+
+  .setup-hint {
+    background: #2a2a2a; border-radius: 6px;
+    padding: 1rem; margin: 1rem 0;
+    border-left: 3px solid var(--red);
+  }
+  .setup-hint p { color: #ddd; font-size: 0.8rem; line-height: 1.6; margin: 0; }
+  .setup-hint code {
+    background: #3a3a3a; border-radius: 3px;
+    padding: 1px 5px; font-size: 0.78rem; color: #f4c542;
+  }
+
+  /* ─── EMPTY / LOADING ─── */
+  .state-empty {
+    text-align: center; padding: 5rem 2rem;
+    color: var(--text-muted);
+  }
+  .state-empty .big { font-size: 3rem; margin-bottom: 1rem; }
+  .state-empty h3 { font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--text); }
+
+  .spinner {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid #333; border-top-color: var(--red);
+    animation: spin 0.7s linear infinite;
+    margin: 2rem auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── SEARCH BAR ─── */
+  #search-wrap { margin-bottom: 1.5rem; }
+  #search {
+    background: #2a2a2a; border: 1px solid #3a3a3a;
+    border-radius: 4px; padding: 9px 14px;
+    color: #fff; font-size: 0.88rem; font-family: inherit;
+    width: 280px; outline: none; transition: border-color 0.2s;
+  }
+  #search:focus { border-color: var(--red); }
+  #search::placeholder { color: #555; }
+
+  /* ─── FOLDER BADGES ─── */
+  .folder-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #2a2a2a; border: 1px solid #3a3a3a;
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 0.75rem; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin: 0 4px 4px 0;
+  }
+  .folder-pill:hover, .folder-pill.active {
+    border-color: var(--red); background: rgba(229,9,20,0.15); color: #fff;
+  }
+  #folder-pills { margin-bottom: 1.5rem; }
+
+  /* ─── PROGRESS DOTS ─── */
+  #hero-dots {
+    position: absolute; bottom: 1.5rem; right: 4vw;
+    display: flex; gap: 6px; z-index: 1;
+  }
+  .hero-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.3); cursor: pointer;
+    transition: background 0.2s;
+  }
+  .hero-dot.active { background: var(--red); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 600px) {
+    :root { --card-w: 160px; --card-h: 90px; }
+    #hero { height: 55vw; min-height: 300px; padding: 1.5rem 4vw 3rem; }
+    #hero-title { font-size: 2rem; }
+    nav { padding: 0 4vw; gap: 1rem; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="logo" onclick="scrollTo(0,0)">DriveFlix</div>
+  <div class="nav-links">
+    <a class="active" onclick="filterAll()">All Videos</a>
+    <a id="nav-recent" onclick="filterRecent()">Recently Added</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-config" onclick="openSetup()">⚙ Configure</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <div id="hero-bg"></div>
+  <div class="hero-content">
+    <div id="hero-title">DriveFlix</div>
+    <div id="hero-meta">Your Google Drive · Video Library</div>
+    <div class="hero-btns">
+      <button class="btn-play" id="hero-play" onclick="heroPlay()">▶ Play</button>
+      <button class="btn-info" id="hero-info" onclick="heroInfo()">ℹ More Info</button>
+    </div>
+  </div>
+  <div id="hero-dots"></div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="content">
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="🔍  Search videos…" oninput="onSearch(this.value)">
+  </div>
+  <div id="folder-pills"></div>
+  <div id="rows-area">
+    <div class="state-empty">
+      <div class="big">🎬</div>
+      <h3>Welcome to DriveFlix</h3>
+      <p>Click <strong>Configure</strong> to connect your Google Drive folder.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PLAYER -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal">
+    <button id="modal-close" onclick="closeModal()">✕</button>
+    <div id="video-wrap">
+      <iframe id="video-iframe" allowfullscreen allow="autoplay; fullscreen"></iframe>
+    </div>
+    <div id="modal-info">
+      <div id="modal-title"></div>
+      <div id="modal-meta"></div>
+      <a id="modal-open" href="#" target="_blank" rel="noopener">
+        ↗ Open in Google Drive
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP OVERLAY -->
+<div id="setup-overlay">
+  <div id="setup-box" class="setup-box">
+    <div class="setup-logo">DriveFlix</div>
+    <h2>Connect Your Google Drive</h2>
+    <p>Enter your Google Drive API credentials to start browsing your video library.</p>
+
+    <div class="setup-hint">
+      <p>
+        <strong>How to get credentials:</strong><br>
+        1. Go to <code>console.cloud.google.com</code><br>
+        2. Create a project → Enable <code>Google Drive API</code><br>
+        3. Create credentials → <code>API Key</code> (restrict to Drive API)<br>
+        4. Share your Drive folder publicly (or with your domain)<br>
+        5. Copy the <strong>Folder ID</strong> from the URL:<br>
+        <code>drive.google.com/drive/folders/<strong>[FOLDER-ID]</strong></code>
+      </p>
+    </div>
+
+    <label class="field-label">Google API Key</label>
+    <input class="field-input" id="api-key-input" type="password" placeholder="AIzaSy…">
+
+    <label class="field-label">Drive Folder ID <span style="font-weight:400;text-transform:none">(optional — leave blank for root)</span></label>
+    <input class="field-input" id="folder-id-input" type="text" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2…">
+
+    <label class="field-label">Library Name</label>
+    <input class="field-input" id="library-name-input" type="text" placeholder="My Video Library" value="My Video Library">
+
+    <div class="setup-actions">
+      <button class="btn-primary" onclick="saveConfig()">Connect & Browse</button>
+      <button class="btn-secondary" onclick="loadDemo()">Try Demo Mode</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+let CONFIG = { apiKey: '', folderId: '', libraryName: 'DriveFlix' };
+let ALL_FILES = [];
+let FOLDERS = [];
+let heroIdx = 0;
+let heroTimer;
+let currentFilter = 'all';
+let searchQ = '';
+
+const VIDEO_MIME = [
+  'video/mp4','video/x-msvideo','video/quicktime',
+  'video/x-matroska','video/webm','video/mpeg','video/3gpp'
+];
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('driveflix_config');
+  if (saved) {
+    CONFIG = JSON.parse(saved);
+    closeSetup();
+    fetchVideos();
+  }
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', scrollY > 50);
+  });
+});
+
+/* ═══════════════════════════════════════════════════
+   SETUP
+═══════════════════════════════════════════════════ */
+function openSetup() {
+  document.getElementById('setup-overlay').style.display = 'flex';
+  document.getElementById('api-key-input').value = CONFIG.apiKey || '';
+  document.getElementById('folder-id-input').value = CONFIG.folderId || '';
+  document.getElementById('library-name-input').value = CONFIG.libraryName || 'My Video Library';
+}
+function closeSetup() {
+  document.getElementById('setup-overlay').style.display = 'none';
+}
+function saveConfig() {
+  const key = document.getElementById('api-key-input').value.trim();
+  const fid = document.getElementById('folder-id-input').value.trim();
+  const name = document.getElementById('library-name-input').value.trim() || 'DriveFlix';
+  if (!key) { alert('Please enter a Google API Key.'); return; }
+  CONFIG = { apiKey: key, folderId: fid, libraryName: name };
+  localStorage.setItem('driveflix_config', JSON.stringify(CONFIG));
+  document.querySelector('.logo').textContent = name;
+  closeSetup();
+  fetchVideos();
+}
+
+/* ═══════════════════════════════════════════════════
+   DEMO MODE
+═══════════════════════════════════════════════════ */
+function loadDemo() {
+  closeSetup();
+  const demo = [
+    { id:'dQw4w9WgXcQ', name:'Big Buck Bunny', mimeType:'video/mp4', folder:'Animation', modifiedTime:'2024-01-15T10:00:00Z' },
+    { id:'2', name:'Elephants Dream', mimeType:'video/mp4', folder:'Animation', modifiedTime:'2024-02-10T10:00:00Z' },
+    { id:'3', name:'Cosmos: A Story', mimeType:'video/mp4', folder:'Documentaries', modifiedTime:'2024-03-01T10:00:00Z' },
+    { id:'4', name:'Sintel', mimeType:'video/mp4', folder:'Animation', modifiedTime:'2024-01-20T10:00:00Z' },
+    { id:'5', name:'Tears of Steel', mimeType:'video/mp4', folder:'Sci-Fi', modifiedTime:'2024-02-05T10:00:00Z' },
+    { id:'6', name:'Caminandes', mimeType:'video/mp4', folder:'Animation', modifiedTime:'2024-03-10T10:00:00Z' },
+    { id:'7', name:'The Deep', mimeType:'video/mp4', folder:'Documentaries', modifiedTime:'2024-01-28T10:00:00Z' },
+    { id:'8', name:'Kara 9000', mimeType:'video/mp4', folder:'Sci-Fi', modifiedTime:'2024-02-18T10:00:00Z' },
+    { id:'9', name:'Cosmos Episode 2', mimeType:'video/mp4', folder:'Documentaries', modifiedTime:'2024-03-05T10:00:00Z' },
+    { id:'10', name:'Glass Half', mimeType:'video/mp4', folder:'Shorts', modifiedTime:'2024-01-05T10:00:00Z' },
+    { id:'11', name:'Meridian', mimeType:'video/mp4', folder:'Shorts', modifiedTime:'2024-02-25T10:00:00Z' },
+    { id:'12', name:'Superhero Showdown', mimeType:'video/mp4', folder:'Sci-Fi', modifiedTime:'2024-03-15T10:00:00Z' },
+  ];
+  ALL_FILES = demo;
+  FOLDERS = [...new Set(demo.map(f => f.folder))];
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════════
+   GOOGLE DRIVE API
+═══════════════════════════════════════════════════ */
+async function fetchVideos() {
+  showLoading();
+  ALL_FILES = [];
+  FOLDERS = [];
+  try {
+    if (CONFIG.folderId) {
+      await fetchFolderContents(CONFIG.folderId, '');
+    } else {
+      await fetchRoot();
+    }
+    renderAll();
+  } catch(e) {
+    showError(e.message);
+  }
+}
+
+async function fetchRoot() {
+  const q = encodeURIComponent(`(${VIDEO_MIME.map(m=>`mimeType='${m}'`).join(' or ')}) and trashed=false`);
+  const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,mimeType,modifiedTime,thumbnailLink,parents)&pageSize=100&key=${CONFIG.apiKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  ALL_FILES = (data.files || []).map(f => ({...f, folder: 'My Videos'}));
+}
+
+async function fetchFolderContents(folderId, parentName) {
+  // First get sub-folders
+  const folderQ = encodeURIComponent(`'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const folderUrl = `https://www.googleapis.com/drive/v3/files?q=${folderQ}&fields=files(id,name)&key=${CONFIG.apiKey}`;
+  const folderRes = await fetch(folderUrl);
+  const folderData = await folderRes.json();
+  if (folderData.error) throw new Error(folderData.error.message);
+
+  const subFolders = folderData.files || [];
+
+  // Get videos in this folder
+  const mimeQ = VIDEO_MIME.map(m=>`mimeType='${m}'`).join(' or ');
+  const q = encodeURIComponent(`'${folderId}' in parents and (${mimeQ}) and trashed=false`);
+  const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,mimeType,modifiedTime,thumbnailLink)&pageSize=100&key=${CONFIG.apiKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+
+  const folderName = parentName || CONFIG.libraryName;
+  const files = (data.files || []).map(f => ({...f, folder: folderName}));
+  ALL_FILES.push(...files);
+  if (!FOLDERS.includes(folderName) && files.length > 0) FOLDERS.push(folderName);
+
+  // Recurse into sub-folders (up to depth 2)
+  for (const sf of subFolders.slice(0, 8)) {
+    await fetchFolderContents(sf.id, sf.name);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════ */
+function filtered() {
+  let files = ALL_FILES;
+  if (currentFilter !== 'all') files = files.filter(f => f.folder === currentFilter);
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    files = files.filter(f => f.name.toLowerCase().includes(q));
+  }
+  return files;
+}
+
+function renderAll() {
+  const logoEl = document.querySelector('.logo');
+  logoEl.textContent = CONFIG.libraryName || 'DriveFlix';
+
+  renderFolderPills();
+  renderHero(ALL_FILES);
+  renderRows();
+}
+
+function renderFolderPills() {
+  const el = document.getElementById('folder-pills');
+  if (FOLDERS.length <= 1) { el.innerHTML = ''; return; }
+  const pills = [['all','All Videos'], ...FOLDERS.map(f=>[f,f])];
+  el.innerHTML = pills.map(([id, label]) =>
+    `<span class="folder-pill ${currentFilter===id?'active':''}" onclick="setFilter('${id}')">${label}</span>`
+  ).join('');
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  renderFolderPills();
+  renderRows();
+}
+
+function filterAll() { setFilter('all'); }
+function filterRecent() {
+  const recent = [...ALL_FILES].sort((a,b) => new Date(b.modifiedTime)-new Date(a.modifiedTime));
+  currentFilter = 'all';
+  renderFolderPills();
+  renderRowsData({ 'Recently Added': recent });
+}
+
+function onSearch(q) {
+  searchQ = q;
+  renderRows();
+}
+
+function renderRows() {
+  const files = filtered();
+  if (!files.length) {
+    document.getElementById('rows-area').innerHTML = `
+      <div class="state-empty">
+        <div class="big">🎞</div>
+        <h3>No videos found</h3>
+        <p>${searchQ ? 'Try a different search term.' : 'No videos in this folder.'}</p>
+      </div>`;
+    return;
+  }
+
+  // Group by folder
+  const groups = {};
+  files.forEach(f => {
+    if (!groups[f.folder]) groups[f.folder] = [];
+    groups[f.folder].push(f);
+  });
+
+  // If search or single folder, flat display
+  if (searchQ || Object.keys(groups).length === 1) {
+    const label = searchQ ? `Results for "${searchQ}"` : Object.keys(groups)[0];
+    renderRowsData({ [label]: files });
+  } else {
+    renderRowsData(groups);
+  }
+}
+
+function renderRowsData(groups) {
+  const area = document.getElementById('rows-area');
+  area.innerHTML = Object.entries(groups).map(([name, files]) => `
+    <div class="row">
+      <div class="row-title">${name}</div>
+      <div class="row-track">
+        ${files.map(f => cardHTML(f)).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function cardHTML(f) {
+  const cleanName = cleanTitle(f.name);
+  const thumb = f.thumbnailLink
+    ? `<img class="card-thumb" src="${f.thumbnailLink}" alt="${cleanName}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    : '';
+  const fallback = `<div class="card-thumb-fallback" ${f.thumbnailLink?'style="display:none"':''}><div class="icon">🎬</div><div class="fname">${cleanName}</div></div>`;
+  const date = f.modifiedTime ? new Date(f.modifiedTime).toLocaleDateString('en-IN',{month:'short',year:'numeric'}) : '';
+  return `<div class="card" onclick='playFile(${JSON.stringify(f)})'>
+    ${thumb}${fallback}
+    <div class="card-overlay">
+      <div class="card-name">${cleanName}</div>
+      <div class="card-duration">${date}</div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════ */
+function renderHero(files) {
+  const heroFiles = files.filter(f => f.thumbnailLink).slice(0, 5);
+  if (!heroFiles.length) heroFiles.push(...files.slice(0,5));
+
+  clearInterval(heroTimer);
+  heroIdx = 0;
+  setHero(heroFiles[0]);
+
+  const dots = document.getElementById('hero-dots');
+  if (heroFiles.length > 1) {
+    dots.innerHTML = heroFiles.map((_,i) => `<div class="hero-dot ${i===0?'active':''}" onclick="setHeroIdx(${i}, ${JSON.stringify(heroFiles).replace(/'/g,"&#39;")})"></div>`).join('');
+    heroTimer = setInterval(() => {
+      heroIdx = (heroIdx + 1) % heroFiles.length;
+      setHeroIdxDirect(heroIdx, heroFiles);
+    }, 6000);
+  } else {
+    dots.innerHTML = '';
+  }
+
+  document.getElementById('hero-play').onclick = () => playFile(heroFiles[heroIdx] || heroFiles[0]);
+  document.getElementById('hero-info').onclick = () => playFile(heroFiles[heroIdx] || heroFiles[0]);
+}
+
+function setHero(f) {
+  const bg = document.getElementById('hero-bg');
+  if (f.thumbnailLink) {
+    bg.style.backgroundImage = `url(${f.thumbnailLink})`;
+  } else {
+    bg.style.backgroundImage = 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)';
+  }
+  document.getElementById('hero-title').textContent = cleanTitle(f.name);
+  document.getElementById('hero-meta').textContent =
+    `${f.folder || 'My Library'} · ${f.modifiedTime ? new Date(f.modifiedTime).getFullYear() : ''}`;
+}
+
+function setHeroIdxDirect(idx, files) {
+  heroIdx = idx;
+  setHero(files[idx]);
+  document.querySelectorAll('.hero-dot').forEach((d,i) => d.classList.toggle('active', i===idx));
+}
+
+function heroPlay() {
+  const allFiles = filtered();
+  if (allFiles[heroIdx]) playFile(allFiles[heroIdx]);
+}
+function heroInfo() { heroPlay(); }
+
+/* ═══════════════════════════════════════════════════
+   PLAYER MODAL
+═══════════════════════════════════════════════════ */
+function playFile(f) {
+  const overlay = document.getElementById('modal-overlay');
+  const iframe = document.getElementById('video-iframe');
+  const title = document.getElementById('modal-title');
+  const meta = document.getElementById('modal-meta');
+  const openLink = document.getElementById('modal-open');
+
+  const cleanName = cleanTitle(f.name);
+  title.textContent = cleanName;
+  meta.textContent = [
+    f.folder,
+    f.modifiedTime ? new Date(f.modifiedTime).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : ''
+  ].filter(Boolean).join(' · ');
+
+  const driveUrl = `https://drive.google.com/file/d/${f.id}/view`;
+  openLink.href = driveUrl;
+
+  // Use Google Drive embed player
+  iframe.src = `https://drive.google.com/file/d/${f.id}/preview`;
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay') && e.target !== document.getElementById('modal-close')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('video-iframe').src = '';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+/* ═══════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════ */
+function cleanTitle(name) {
+  return name
+    .replace(/\.[^.]+$/, '')               // remove extension
+    .replace(/[_\-\.]+/g, ' ')             // clean separators
+    .replace(/\b(720p|1080p|4k|hd|bluray|webrip|hdtv|x264|x265|aac|mp4|mkv)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function showLoading() {
+  document.getElementById('rows-area').innerHTML = `<div class="spinner"></div><p style="text-align:center;color:#666;font-size:0.85rem">Loading your library…</p>`;
+}
+
+function showError(msg) {
+  document.getElementById('rows-area').innerHTML = `
+    <div class="state-empty">
+      <div class="big">⚠️</div>
+      <h3>Connection Error</h3>
+      <p>${msg}</p>
+      <button class="btn-config" onclick="openSetup()" style="margin-top:1rem">Reconfigure</button>
+    </div>`;
+}
+</script>
+</body>
+</html>
